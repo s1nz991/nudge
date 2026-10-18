@@ -224,6 +224,7 @@ def _upsert_goal(db: Session, user: User, args: dict) -> str:
         row.cadence = args["cadence"]
     if args.get("progress_note"):
         row.last_progress_at = datetime.now(timezone.utc)
+        _upsert_fact(db, user, "progress", row.title, args["progress_note"])
     return f"goal '{row.title}' is {row.status}"
 
 

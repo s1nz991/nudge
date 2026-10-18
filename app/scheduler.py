@@ -9,7 +9,10 @@ from app.models import User
 
 
 def due_checkins(db: Session) -> list[User]:
-    now = datetime.now(timezone.utc)
+    # SQLite stores datetimes as naive strings even when DateTime(timezone=True)
+    # is declared.  Use a naive UTC timestamp so the comparison is always
+    # apples-to-apples regardless of what the driver returns.
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     return (
         db.query(User)
         .filter(User.next_checkin_at.is_not(None), User.next_checkin_at <= now)
