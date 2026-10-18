@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta, timezone
 
-from openai import APIError, AuthenticationError, OpenAI, RateLimitError
+from openai import APIError, AuthenticationError, NotFoundError, OpenAI, RateLimitError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -136,13 +136,19 @@ def _describe_api_error(exc: Exception) -> str:
             "or switch .env to a free-tier Groq key:\n"
             "  OPENAI_API_KEY=gsk_your_groq_key\n"
             "  OPENAI_BASE_URL=https://api.groq.com/openai/v1\n"
-            "  OPENAI_MODEL=llama-3.3-70b-versatile\n"
+            "  OPENAI_MODEL=qwen/qwen3.8-27b\n"
             "Then restart: python -m app.cli"
         )
     if isinstance(exc, AuthenticationError) or "invalid_api_key" in text:
         return (
             "The API key in .env was rejected. Check OPENAI_API_KEY "
             "(and OPENAI_BASE_URL if you are not using OpenAI)."
+        )
+    if isinstance(exc, NotFoundError) or "model_not_found" in text:
+        return (
+            f"Model not found: {settings.openai_model}. "
+            "Set OPENAI_MODEL in .env to a model your provider still offers "
+            "(Groq example: qwen/qwen3.8-27b), then restart."
         )
     if isinstance(exc, APIError):
         return f"The model API failed ({exc.__class__.__name__}). Try again in a moment."

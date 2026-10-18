@@ -337,6 +337,22 @@ class TestReplyToUser:
 
     @patch("app.agent._client")
     @patch("app.agent._key_configured", return_value=True)
+    def test_model_not_found_message(self, _mock_key, mock_client_fn, db_session, sample_user):
+        from openai import NotFoundError
+
+        client = MagicMock()
+        client.chat.completions.create.side_effect = NotFoundError(
+            message="model missing",
+            response=MagicMock(status_code=404, headers={}),
+            body={"message": "model_not_found", "code": "model_not_found"},
+        )
+        mock_client_fn.return_value = client
+        reply = reply_to_user(db_session, sample_user, "hello")
+        assert "Model not found" in reply
+        assert "OPENAI_MODEL" in reply
+
+    @patch("app.agent._client")
+    @patch("app.agent._key_configured", return_value=True)
     def test_tool_call_flow(self, _mock_key, mock_client_fn, db_session, sample_user):
         """Simulate the LLM calling remember_fact then giving a text reply."""
         # First response: tool call
